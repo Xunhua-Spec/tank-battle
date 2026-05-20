@@ -619,7 +619,8 @@ function update() {
   explosions = explosions.filter(e => e.life > 0);
 
   // Check player death
-  if (player && !player.alive) {
+  if (player && !player.alive && !player.deadProcessed) {
+    player.deadProcessed = true;
     lives--;
     if (lives > 0) {
       // Respawn after delay
