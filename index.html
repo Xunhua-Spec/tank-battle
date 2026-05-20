@@ -134,7 +134,8 @@ canvas#gameCanvas { display: block; }
     <div class="stat-row"><span class="label">生命</span><span class="value" id="livesDisplay">❤❤❤</span></div>
     <div class="stat-row"><span class="label">剩余敌军</span></div>
     <div id="enemyCount"></div>
-    <div class="stat-row" id="shieldRow" style="display:none"><span class="label">🛡 无敌</span><span class="value" id="shieldDisplay" style="color:#64c8ff"></span></div>
+    <div class="stat-row" id="shieldRow" style="display:none"><span class="label">🛡 基地无敌</span><span class="value" id="shieldDisplay" style="color:#64c8ff"></span></div>
+    <div class="stat-row" id="playerShieldRow" style="display:none"><span class="label">🛡 坦克无敌</span><span class="value" id="playerShieldDisplay" style="color:#64c8ff"></span></div>
     <div id="controls">
       <p><kbd>↑↓←→</kbd> 移动</p>
       <p><kbd>空格</kbd> / <kbd>J</kbd> 射击</p>
@@ -248,6 +249,8 @@ const BASE_INVINCIBLE_FRAMES = 300; // 5 seconds at 60fps
 let frameCount = 0;
 let baseInvincible = false;
 let baseInvincibleTimer = 0;
+let playerInvincible = false;
+let playerInvincibleTimer = 0;
 
 let player = null;
 let enemies = [];
@@ -473,6 +476,8 @@ function initGame() {
   baseAlive = true;
   baseInvincible = true;
   baseInvincibleTimer = BASE_INVINCIBLE_FRAMES;
+  playerInvincible = true;
+  playerInvincibleTimer = BASE_INVINCIBLE_FRAMES;
 }
 
 function nextWave() {
@@ -516,12 +521,14 @@ function update() {
   if (gameState !== 'playing') return;
   frameCount++;
 
-  // Base invincibility countdown
+  // Invincibility countdowns
   if (baseInvincible) {
     baseInvincibleTimer--;
-    if (baseInvincibleTimer <= 0) {
-      baseInvincible = false;
-    }
+    if (baseInvincibleTimer <= 0) baseInvincible = false;
+  }
+  if (playerInvincible) {
+    playerInvincibleTimer--;
+    if (playerInvincibleTimer <= 0) playerInvincible = false;
   }
 
   // Player movement
@@ -600,7 +607,7 @@ function update() {
         }
       }
     } else {
-      if (player && player.alive && rectCollide(bullet, player)) {
+      if (player && player.alive && !playerInvincible && rectCollide(bullet, player)) {
         player.alive = false;
         bullet.alive = false;
         explosions.push(createExplosion(player.x + TANK_SIZE/2, player.y + TANK_SIZE/2, true));
@@ -849,6 +856,19 @@ function drawTank(tank) {
   ctx.restore();
 
   ctx.restore();
+
+  // Invincibility shield on player tank
+  if (tank.isPlayer && playerInvincible) {
+    const pulse = 0.5 + 0.5 * Math.sin(frameCount * 0.15);
+    ctx.save();
+    ctx.strokeStyle = `rgba(100, 200, 255, ${pulse})`;
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = 'rgba(100, 200, 255, 0.5)';
+    ctx.shadowBlur = 12;
+    const pad = 3;
+    ctx.strokeRect(x - pad, y - pad, w + pad * 2, h + pad * 2);
+    ctx.restore();
+  }
 }
 
 // ----- UI Update -----
@@ -873,6 +893,15 @@ function updateUI() {
     shieldDisplay.textContent = `${secs}s`;
   } else {
     shieldRow.style.display = 'none';
+  }
+  const playerShieldRow = document.getElementById('playerShieldRow');
+  const playerShieldDisplay = document.getElementById('playerShieldDisplay');
+  if (playerInvincible) {
+    playerShieldRow.style.display = '';
+    const secs = Math.ceil(playerInvincibleTimer / 60);
+    playerShieldDisplay.textContent = `${secs}s`;
+  } else {
+    playerShieldRow.style.display = 'none';
   }
 }
 
