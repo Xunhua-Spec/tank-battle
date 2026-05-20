@@ -137,7 +137,7 @@ canvas#gameCanvas { display: block; }
     <div class="stat-row" id="shieldRow" style="display:none"><span class="label">🛡 基地无敌</span><span class="value" id="shieldDisplay" style="color:#64c8ff"></span></div>
     <div class="stat-row" id="playerShieldRow" style="display:none"><span class="label">🛡 坦克无敌</span><span class="value" id="playerShieldDisplay" style="color:#64c8ff"></span></div>
     <div id="controls">
-      <p><kbd>↑↓←→</kbd> 移动</p>
+      <p><kbd>↑↓←→</kbd> / <kbd>WASD</kbd> 移动</p>
       <p><kbd>空格</kbd> / <kbd>J</kbd> 射击</p>
       <p><kbd>P</kbd> 暂停</p>
     </div>
@@ -535,10 +535,10 @@ function update() {
   if (player && player.alive) {
     let moving = false;
     let newDir = player.dir;
-    if (keys['ArrowUp']) { newDir = 0; moving = true; }
-    else if (keys['ArrowRight']) { newDir = 1; moving = true; }
-    else if (keys['ArrowDown']) { newDir = 2; moving = true; }
-    else if (keys['ArrowLeft']) { newDir = 3; moving = true; }
+    if (keys['ArrowUp'] || keys['w'] || keys['W']) { newDir = 0; moving = true; }
+    else if (keys['ArrowRight'] || keys['d'] || keys['D']) { newDir = 1; moving = true; }
+    else if (keys['ArrowDown'] || keys['s'] || keys['S']) { newDir = 2; moving = true; }
+    else if (keys['ArrowLeft'] || keys['a'] || keys['A']) { newDir = 3; moving = true; }
 
     if (moving) {
       player.dir = newDir;
