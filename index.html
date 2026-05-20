@@ -630,6 +630,22 @@ function update() {
       bullet.alive = false;
       continue;
     }
+    // Bullet vs bullet cancellation
+    if (bullet.alive) {
+      for (const other of bullets) {
+        if (other === bullet || !other.alive || other.isPlayer === bullet.isPlayer) continue;
+        if (rectCollide(bullet, other)) {
+          bullet.alive = false;
+          other.alive = false;
+          explosions.push(createExplosion(
+            (bullet.x + other.x) / 2 + BULLET_SIZE/2,
+            (bullet.y + other.y) / 2 + BULLET_SIZE/2,
+            false
+          ));
+          break;
+        }
+      }
+    }
     // Hit wall
     if (bulletHitWall(bullet)) {
       bullet.alive = false;
