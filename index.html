@@ -322,6 +322,47 @@ function playerShoot() {
   player.cooldown = player.shootCooldown;
 }
 
+// ----- Enemy Smart Shooting -----
+function enemyShouldShoot(enemy) {
+  const bulletCx = enemy.x + TANK_SIZE / 2;
+  const bulletCy = enemy.y + TANK_SIZE / 2;
+  const tolerance = TANK_SIZE;
+
+  // 1. Check brick wall directly ahead (within 2 tiles)
+  for (let d = 1; d <= 2; d++) {
+    const tx = Math.floor((bulletCx + [0, d * TILE, 0, -d * TILE][enemy.dir]) / TILE);
+    const ty = Math.floor((bulletCy + [-d * TILE, 0, d * TILE, 0][enemy.dir]) / TILE);
+    if (tx >= 0 && tx < COLS && ty >= 0 && ty < ROWS) {
+      if (map[ty][tx] === 1) return true;
+      if (map[ty][tx] === 2) break;
+    }
+  }
+
+  // 2. Check if player is in the line of fire
+  if (player && player.alive) {
+    const pcx = player.x + player.w / 2;
+    const pcy = player.y + player.h / 2;
+    switch (enemy.dir) {
+      case 0: if (pcy < bulletCy && Math.abs(pcx - bulletCx) < tolerance) return true; break;
+      case 1: if (pcx > bulletCx && Math.abs(pcy - bulletCy) < tolerance) return true; break;
+      case 2: if (pcy > bulletCy && Math.abs(pcx - bulletCx) < tolerance) return true; break;
+      case 3: if (pcx < bulletCx && Math.abs(pcy - bulletCy) < tolerance) return true; break;
+    }
+  }
+
+  // 3. Check if base is in the line of fire
+  const baseCx = BASE.col * TILE + TILE;
+  const baseCy = BASE.row * TILE + TILE;
+  switch (enemy.dir) {
+    case 0: if (baseCy < bulletCy && Math.abs(baseCx - bulletCx) < TILE * 2) return true; break;
+    case 1: if (baseCx > bulletCx && Math.abs(baseCy - bulletCy) < TILE * 2) return true; break;
+    case 2: if (baseCy > bulletCy && Math.abs(baseCx - bulletCx) < TILE * 2) return true; break;
+    case 3: if (baseCx < bulletCx && Math.abs(baseCy - bulletCy) < TILE * 2) return true; break;
+  }
+
+  return false;
+}
+
 // ----- Enemy AI -----
 function updateEnemyAI(enemy) {
   if (!enemy.alive) return;
@@ -345,8 +386,8 @@ function updateEnemyAI(enemy) {
     enemy.lastDir = enemy.dir;
   }
 
-  // Shoot randomly
-  if (Math.random() < 0.02 && enemy.cooldown <= 0) {
+  // Shoot only when necessary
+  if (enemy.cooldown <= 0 && enemyShouldShoot(enemy)) {
     const b = createBullet(enemy);
     bullets.push(b);
     enemy.cooldown = enemy.shootCooldown;
