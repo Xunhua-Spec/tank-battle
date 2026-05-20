@@ -134,6 +134,7 @@ canvas#gameCanvas { display: block; }
     <div class="stat-row"><span class="label">生命</span><span class="value" id="livesDisplay">❤❤❤</span></div>
     <div class="stat-row"><span class="label">剩余敌军</span></div>
     <div id="enemyCount"></div>
+    <div class="stat-row" id="shieldRow" style="display:none"><span class="label">🛡 无敌</span><span class="value" id="shieldDisplay" style="color:#64c8ff"></span></div>
     <div id="controls">
       <p><kbd>↑↓←→</kbd> 移动</p>
       <p><kbd>空格</kbd> / <kbd>J</kbd> 射击</p>
@@ -243,7 +244,10 @@ let totalEnemiesRemaining = 0;
 let enemiesSpawned = 0;
 let enemySpawnTimer = 0;
 const SPAWN_INTERVAL = 120; // frames
+const BASE_INVINCIBLE_FRAMES = 300; // 5 seconds at 60fps
 let frameCount = 0;
+let baseInvincible = false;
+let baseInvincibleTimer = 0;
 
 let player = null;
 let enemies = [];
@@ -418,7 +422,9 @@ function bulletHitWall(bullet) {
   // Check base
   if (cy >= BASE.row && cy < BASE.row + BASE.h &&
       cx >= BASE.col && cx < BASE.col + BASE.w) {
-    baseAlive = false;
+    if (!baseInvincible) {
+      baseAlive = false;
+    }
     explosions.push(createExplosion(BASE.col * TILE + TILE, BASE.row * TILE + TILE, true));
     return true;
   }
@@ -465,6 +471,8 @@ function initGame() {
   frameCount = 0;
   enemySpawnTimer = 0;
   baseAlive = true;
+  baseInvincible = true;
+  baseInvincibleTimer = BASE_INVINCIBLE_FRAMES;
 }
 
 function nextWave() {
@@ -507,6 +515,14 @@ function hideOverlay() {
 function update() {
   if (gameState !== 'playing') return;
   frameCount++;
+
+  // Base invincibility countdown
+  if (baseInvincible) {
+    baseInvincibleTimer--;
+    if (baseInvincibleTimer <= 0) {
+      baseInvincible = false;
+    }
+  }
 
   // Player movement
   if (player && player.alive) {
@@ -695,6 +711,25 @@ function draw() {
     ctx.fillStyle = '#222';
     ctx.fillRect(bx + 5, by + 5, TILE * 2 - 10, TILE * 2 - 10);
   }
+  // Invincibility shield
+  if (baseInvincible) {
+    const pulse = 0.6 + 0.4 * Math.sin(frameCount * 0.1);
+    ctx.save();
+    ctx.strokeStyle = `rgba(100, 200, 255, ${pulse * 0.8})`;
+    ctx.lineWidth = 3;
+    ctx.shadowColor = 'rgba(100, 200, 255, 0.6)';
+    ctx.shadowBlur = 15;
+    ctx.strokeRect(bx - 4, by - 4, TILE * 2 + 8, TILE * 2 + 8);
+    ctx.restore();
+    // Corner dots
+    const dotPositions = [[-4,-4], [TILE*2+4,-4], [-4,TILE*2+4], [TILE*2+4,TILE*2+4]];
+    ctx.fillStyle = `rgba(100, 200, 255, ${pulse})`;
+    for (const [dx, dy] of dotPositions) {
+      ctx.beginPath();
+      ctx.arc(bx + dx, by + dy, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
 
   // Draw tanks
   drawTank(player);
@@ -827,6 +862,16 @@ function updateUI() {
     const icon = document.createElement('div');
     icon.className = 'enemy-icon';
     container.appendChild(icon);
+  }
+  // Shield timer
+  const shieldRow = document.getElementById('shieldRow');
+  const shieldDisplay = document.getElementById('shieldDisplay');
+  if (baseInvincible) {
+    shieldRow.style.display = '';
+    const secs = Math.ceil(baseInvincibleTimer / 60);
+    shieldDisplay.textContent = `${secs}s`;
+  } else {
+    shieldRow.style.display = 'none';
   }
 }
 
