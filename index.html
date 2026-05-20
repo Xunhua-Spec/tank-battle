@@ -216,7 +216,7 @@ const MAP_TEMPLATE = [
   [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
 ];
 
-let map = [];
+let map = MAP_TEMPLATE.map(row => [...row]);
 let baseAlive = true;
 
 function resetMap() {
@@ -832,10 +832,10 @@ function updateUI() {
 
 // ----- Game Loop -----
 function gameLoop() {
-  update();
-  draw();
-  updateUI();
   requestAnimationFrame(gameLoop);
+  try { update(); } catch(e) { console.error(e); }
+  try { draw(); } catch(e) { console.error(e); }
+  try { updateUI(); } catch(e) { console.error(e); }
 }
 
 // ----- Start -----
